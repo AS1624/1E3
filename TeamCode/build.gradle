@@ -10,19 +10,49 @@
 
 
 // Custom definitions may go here
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+        maven { url 'https://www.matthewo.tech/maven/' }
+        maven { url 'https://repo.dairy.foundation/releases' }
+        // maven { url 'https://repo.dairy.foundation/private' }
+    }
+}
 
-// Include common definitions from above.
 apply from: '../build.common.gradle'
 apply from: '../build.dependencies.gradle'
 
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+
 android {
     namespace = 'org.firstinspires.ftc.teamcode'
+    compileSdk 34
+
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
 
     packagingOptions {
         jniLibs.useLegacyPackaging true
     }
 }
 
+
+
 dependencies {
     implementation project(':FtcRobotController')
+    implementation 'androidx.core:core-ktx:1.13.1'
+
+    annotationProcessor files('lib/OpModeAnnotationProcessor.jar')
+    implementation "org.jetbrains.kotlin:kotlin-reflect:2.0.0"
+
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib:2.0.0'
+
+
+
+    implementation 'org.openftc:easyopencv:1.5.0' // Adjust the version as necessary
+
 }
