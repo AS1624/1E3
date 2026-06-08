@@ -2,104 +2,95 @@ package org.firstinspires.ftc.teamcode
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode
 import com.qualcomm.robotcore.util.ClassUtil.invoke
+import com.sun.tools.javac.jvm.Gen.one
+import org.firstinspires.ftc.teamcode.OpCodes.CALL
+import org.firstinspires.ftc.teamcode.OpCodes.CONDJMP
+import org.firstinspires.ftc.teamcode.OpCodes.FUNCTION
+import org.firstinspires.ftc.teamcode.OpCodes.LOAD
+import org.firstinspires.ftc.teamcode.OpCodes.RETURN
 import java.io.File
 import kotlin.reflect.full.functions
 
-const val LOAD     = 'L' // L%reg dest%string%
-const val CALL     = 'C' // C%reg source%%dest%%name%<% reg value% ... >%null%
-const val CONDJMP  = 'J' // J%reg bool%%char# true%
-const val FUNCTION = 'F' // F%char# function start%
-const val RETURN   = 'R' // R
 
 class OpMode: LinearOpMode() {
-    /*
-     * one line
-     */
+    // one line
     val stack = ArrayDeque<Int>()
     var head = 0
     val registers = mutableMapOf<String, Any?>(
-        //"this" to this,
-        //"hardwareMap" to this.hardwareMap,
+        "this" to this,
+        "hardwareMap" to this.hardwareMap,
         "null" to null,
         "true" to true,
         "false" to false,
         "1.0" to 1.0
     )
-    lateinit var text: String
+    lateinit var text: List<String>
 
     override fun runOpMode() {
-
-        // waitForStart()
-
         println("started")
 
         // zero lines
-        text = File("text.txt").readText()
+        text = File("text.txt").readLines()
 
         // one line
         for(i in 0..5 /*generateSequence {
             if(isStopRequested ) null else 0.0
         }*/){
-            // zero lines
-            println(text[head])
-            when(text[head]){
+            // one line
+            val params = text[head].slice(
+                2..< text[head].length
+            ).split("%")
+            // one line
+            when(text[head][0]){
 
-                // two lines
+                // one line
                 CALL -> {
-                    val source = registers[next()]!!
-                    val dest = next()
-                    val name = next()
-                    val method = source::class.java.methods.first {
-                        it.name == name
-                    }
-                    val params = (generateSequence<Any> {
-                        registers[next()]
-                    }.toList().toTypedArray())
+                    val source = params[0]
+                    val dest = params[1]
+                    val method = params[2]
 
                     print("params: ")
                     params.forEach {
                         print(it.toString() + "(${it::class}), ")
                     }
                     println()
-                    registers[dest] = method.invoke(
-                        source, *params
+                    registers[dest] = (
+                        registers[source]!!::class.java.methods
+                        .first {
+                             it.name == method
+                        }.invoke(
+                            registers[source]!!,
+                            *params.slice(3..<params.size).toTypedArray()
+                        )
                     )
+                    head ++
                 }
 
                 // one line
-                LOAD -> registers[next()] = next()
+                LOAD -> {
+                    registers[params[0]] = params[1]
+                    head ++
+                }
 
+                // one line
                 RETURN -> {
                     head = stack.removeLastOrNull() ?: break
                 }
 
                 // one line
                 CONDJMP -> {
-                    if (registers[next()] as Boolean) {
-                        head = next().toInt()
-                    } else next()
+                    if (registers[params[0]] as Boolean) {
+                        head = params[1].toInt()
+                    } else head ++
                 }
                 // one line
                 FUNCTION -> {
                     stack.addLast(head)
-                    head = next().toInt()
+                    head = params[0].toInt()
                 }
             }
             println(registers)
             println("head: $head")
         }
-    }
-
-    /*
-     * 2 lines
-     */
-    fun next(): String {
-        val end = text.indexOf("%", head + 1)
-        //println("end: $end")
-        val oldHead = head
-        head = end + 1
-        val output = text.slice(oldHead + 1 ..< end)
-        println("next: $output")
-        return output
     }
 }
